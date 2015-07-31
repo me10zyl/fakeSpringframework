@@ -13,7 +13,7 @@ public class Test_ {
 
 	@Test
 	public void test1() throws IOException {
-		ClassPathXmlApplicationContext context= new ClassPathXmlApplicationContext("src/main/java/applicationContext.xml");
+		ClassPathXmlApplicationContext context= new ClassPathXmlApplicationContext("src/test/java/applicationContext.xml");
 		UserDAO userDAO = (UserDAO) context.getBean("userDAO");
 		User user = new User();
 		user.setAge(23);
