@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+	">
+	<bean id="userDAO" class="net.xicp.zyl_me.dal.dao.UserDAOImpl"></bean>
+	<bean id="txMgr" class="net.xicp.zyl_me.dal.tx.TransactionManager"></bean>
+	<aop:config>
+		<aop:aspect ref="txMgr">
+			<aop:before pointcut="execution(* net.xicp.zyl_me.dal.dao.UserDAOImpl.add(..))" method="before"/>
+			<aop:after pointcut="execution(* net.xicp.zyl_me.dal.dao.UserDAOImpl.add(..))" method="after"/>
+		</aop:aspect>
+	</aop:config>
+</beans>
