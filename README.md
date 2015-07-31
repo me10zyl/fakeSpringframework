@@ -10,5 +10,6 @@ Modules implement now:
 The next version will implements:
 
 + IOC, DI annotation version
++ make own xsd
 
 <font style='float:right'><small>2015-7-31 21:59:52</small></font>
