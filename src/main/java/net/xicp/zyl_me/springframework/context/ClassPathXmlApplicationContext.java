@@ -93,10 +93,11 @@ public class ClassPathXmlApplicationContext {
 								}
 								proxyHandler.setAspect(aspectObj.getClass());
 								if (aopBeforeOrAfter.getName().equals("before")) {
-									proxyHandler.setBeforeMethod(aspectObj.getClass().getMethod(aspectMethod.getText(), null));
+									proxyHandler.addBeforeMethod(aspectObj.getClass().getMethod(aspectMethod.getText(), null));
 								} else if (aopBeforeOrAfter.getName().equals("after")) {
-									proxyHandler.setAfterMethod(aspectObj.getClass().getMethod(aspectMethod.getText(), null));
+									proxyHandler.addAfterMethod(aspectObj.getClass().getMethod(aspectMethod.getText(), null));
 								}
+								proxyHandler.addTargetMethodName(targetMethodName);
 								Class<?>[] interfaces = targetClass.getInterfaces();
 								if (interfaces.length == 0) {
 									interfaces = new Class[] { targetClass };

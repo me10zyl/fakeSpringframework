@@ -19,5 +19,6 @@ public class Test_ {
 		user.setAge(23);
 		user.setName("gs");
 		userDAO.add(user);
+		userDAO.list();
 	}
 }
