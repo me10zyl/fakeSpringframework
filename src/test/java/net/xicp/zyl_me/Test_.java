@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import net.xicp.zyl_me.dal.dao.UserDAO;
 import net.xicp.zyl_me.dal.entity.User;
-import net.xicp.zyl_me.springframework.context.ClassPathXmlApplicationContext;
+import net.xicp.zyl_me.springframework.core.context.ClassPathXmlApplicationContext;
 
 import org.junit.Test;
 
