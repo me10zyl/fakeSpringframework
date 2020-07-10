@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 @Data
-public class BeanDefination {
+public class BeanDefinition {
     private String beanName;
     private String clazz;
 

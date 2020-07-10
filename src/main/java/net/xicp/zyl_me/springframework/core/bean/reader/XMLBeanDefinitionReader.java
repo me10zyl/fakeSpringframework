@@ -1,6 +1,6 @@
 package net.xicp.zyl_me.springframework.core.bean.reader;
 
-import net.xicp.zyl_me.springframework.core.bean.BeanDefination;
+import net.xicp.zyl_me.springframework.core.bean.BeanDefinition;
 import net.xicp.zyl_me.springframework.core.context.Environment;
 import org.dom4j.*;
 
@@ -9,19 +9,30 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class XMLBeanDefinationReader implements BeanDefinationReader {
+public class XMLBeanDefinitionReader implements BeanDefinitionReader {
 
     private String configLocation;
     private Environment environment;
+    private Document document;
 
-    public XMLBeanDefinationReader(String configLocation, Environment environment) {
+    public XMLBeanDefinitionReader(String configLocation, Environment environment) {
         this.configLocation = configLocation;
         this.environment = environment;
     }
 
+    public List<String> getComponentScans(){
+        List<String> result = new ArrayList<>();
+        List<Element> list = document.selectNodes("//*[name()='context:component-scan']");
+        for (Element ele : list) {
+            Attribute attribute = ele.attribute("base-package");
+            result.add(attribute.getText());
+        }
+        return result;
+    }
+
     @Override
-    public List<BeanDefination> readBeanDefinations() {
-        List<BeanDefination> list = null;
+    public List<BeanDefinition> readBeanDefinitions() {
+        List<BeanDefinition> list = null;
         File file = new File(configLocation);
         String line = null;
         StringBuilder xml = new StringBuilder();
@@ -30,8 +41,9 @@ public class XMLBeanDefinationReader implements BeanDefinationReader {
                 xml.append(line);
             }
             Document document = DocumentHelper.parseText(xml.toString());
+            this.document = document;
             environment.setXmlDocument(document);
-            list = handleBeanDefination(document);
+            list = handleBeanDefinition(document);
         } catch (IOException | DocumentException e) {
             // TODO: handle exception
             e.printStackTrace();
@@ -39,8 +51,8 @@ public class XMLBeanDefinationReader implements BeanDefinationReader {
         return list;
     }
 
-    private List<BeanDefination> handleBeanDefination(Document document) {
-        List<BeanDefination> list = new ArrayList<>();
+    private List<BeanDefinition> handleBeanDefinition(Document document) {
+        List<BeanDefinition> list = new ArrayList<>();
         Element root = document.getRootElement();
         @SuppressWarnings("unchecked")
         List<Node> beans = root.selectNodes("//*[name()='bean']");
@@ -49,10 +61,10 @@ public class XMLBeanDefinationReader implements BeanDefinationReader {
             Element bean = (Element) iterator.next();
             Attribute id = bean.attribute("id");
             Attribute _class = bean.attribute("class");
-            BeanDefination beanDefination = new BeanDefination();
-            beanDefination.setBeanName(id.getText());
-            beanDefination.setClazz(_class.getText());
-            list.add(beanDefination);
+            BeanDefinition beanDefinition = new BeanDefinition();
+            beanDefinition.setBeanName(id.getText());
+            beanDefinition.setClazz(_class.getText());
+            list.add(beanDefinition);
         }
         return list;
     }

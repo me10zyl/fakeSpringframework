@@ -5,7 +5,7 @@ This is a simulative spring framework.<br>
 Modules implement now:
 
 1. Core container(IOC, DI) - XML
-2. AOP - XML
+2. ~~AOP - XML(for updating, removed now)~~
 
 The next version will implements:
 

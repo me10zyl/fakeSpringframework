@@ -1,9 +1,6 @@
 package net.xicp.zyl_me.springframework.core.bean.processor;
 
 
-import net.xicp.zyl_me.springframework.core.bean.BeanDefination;
-import net.xicp.zyl_me.springframework.core.bean.factory.BeanFactory;
-import net.xicp.zyl_me.springframework.core.bean.factory.DefaultBeanFactory;
 import net.xicp.zyl_me.springframework.core.bean.factory.FactoryBean;
 import net.xicp.zyl_me.springframework.core.context.ApplicationContext;
 import net.xicp.zyl_me.springframework.core.context.Environment;
@@ -59,10 +56,12 @@ public class AOPBeanDefinationBeanPostProcessor implements BeanPostProcessor {
                         if (mathcer2.find()) {
                             String targetMethodName = mathcer2.group(2);
                             Object aspectObj = applicationContext.getBean(ref.getText());
-                            DefaultInvocationHandler proxyHandler = (DefaultInvocationHandler) applicationContext.getBean("proxyHandler$" + targetClassName);
+                            String tmpBeanName = "proxyHandler$" + targetClassName;
+                            DefaultInvocationHandler proxyHandler = (DefaultInvocationHandler) applicationContext.getBean(tmpBeanName);
                             if (proxyHandler == null) {
                                 proxyHandler = new DefaultInvocationHandler(targetClass.newInstance());
-                                environment.getContainer().put("proxyHandler$" + targetClassName, proxyHandler);
+                                FactoryBean factoryBean = new FactoryBean(proxyHandler, applicationContext);
+                                environment.getContainer().put(tmpBeanName, factoryBean);
                             }
                             proxyHandler.setAspect(aspectObj.getClass());
                             if (aopBeforeOrAfter.getName().equals("before")) {
@@ -82,7 +81,8 @@ public class AOPBeanDefinationBeanPostProcessor implements BeanPostProcessor {
                                 String key = keySetIterator.next();
                                 Object containerObject = applicationContext.getBean(key);
                                 if (targetClass.isInstance(containerObject)) {
-                                    environment.getContainer().put(key, newProxyInstance);
+                                    FactoryBean factoryBean = new FactoryBean(newProxyInstance, applicationContext);
+                                    environment.getContainer().put(key, factoryBean);
                                 }
                             }
                         }
