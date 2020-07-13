@@ -1,13 +1,19 @@
 package net.xicp.zyl_me.springframework.core.bean.reader;
 
+import net.xicp.zyl_me.springframework.core.bean.AspectMethod;
 import net.xicp.zyl_me.springframework.core.bean.BeanDefinition;
+import net.xicp.zyl_me.springframework.core.bean.factory.FactoryBean;
+import net.xicp.zyl_me.springframework.core.context.ApplicationContext;
 import net.xicp.zyl_me.springframework.core.context.Environment;
+import net.xicp.zyl_me.springframework.interceptor.DefaultInvocationHandler;
+import net.xicp.zyl_me.springframework.util.ReflectionUtils;
 import org.dom4j.*;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.lang.reflect.Proxy;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class XMLBeanDefinitionReader implements BeanDefinitionReader {
 
@@ -44,11 +50,70 @@ public class XMLBeanDefinitionReader implements BeanDefinitionReader {
             this.document = document;
             environment.setXmlDocument(document);
             list = handleBeanDefinition(document);
-        } catch (IOException | DocumentException e) {
+            handleAOPDefination(document, list);
+        } catch (IOException | DocumentException | IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             // TODO: handle exception
             e.printStackTrace();
         }
         return list;
+    }
+
+    private void handleAOPDefination(Document document, List<BeanDefinition> list) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        @SuppressWarnings("unchecked")
+        List<Node> aspect = document.selectNodes("/*[name()='beans']//*[name()='aop:config']/*");
+        Iterator<Node> iteratorAspect = aspect.iterator();
+        while (iteratorAspect.hasNext()) {
+            Element aspect_ = (Element) iteratorAspect.next();
+            Attribute ref = ((Element) aspect_).attribute("ref");
+            @SuppressWarnings("unchecked")
+            List<Node> aopAdvice = new ArrayList<>();
+            List<Node> aopBefore = aspect_.selectNodes("/beans//aop:config/aop:aspect/aop:before");
+            List<Node> aopAfter = aspect_.selectNodes("/beans//aop:config/aop:aspect/aop:after");
+            aopAdvice.addAll(aopBefore);
+            aopAdvice.addAll(aopAfter);
+            for (Node node : aopAdvice) {
+                Element aopBeforeOrAfter = (Element) node;
+                Attribute pointcut_ = aopBeforeOrAfter.attribute("pointcut");
+                Attribute aspectMethod = aopBeforeOrAfter.attribute("method");
+                try {
+                    String targetAOP = pointcut_.getText();
+                    Pattern pClassName = Pattern.compile("(\\w+\\.)+\\w+(?=\\.)");
+                    Matcher matcher = pClassName.matcher(targetAOP);
+                    if (matcher.find()) {
+                        String targetClassName = matcher.group();
+                        Pattern pMethod = Pattern.compile("(\\w+\\.)+(\\w+)");
+                        Matcher mathcer2 = pMethod.matcher(targetAOP);
+                        if (mathcer2.find()) {
+                            Optional<BeanDefinition> beanDefinitionOptional = list.stream().filter(e -> e.getClazz().equals(targetClassName)).findFirst();
+                            BeanDefinition beanDefinition = beanDefinitionOptional.get();
+                            List<AspectMethod> beforeList = new ArrayList<>();
+                            List<AspectMethod> afterList = new ArrayList<>();
+                            String targetMethodName = mathcer2.group(2);
+                            Class<?> targetClass = Class.forName(targetClassName);
+                            if (aopBeforeOrAfter.getName().equals("before")) {
+                                AspectMethod as = new AspectMethod();
+                                as.setAspectBeanName(ref.getText());
+                                as.setAspectMethodName(aspectMethod.getText());
+                                as.setTargetClass(targetClass);
+                                as.setTargetMethodName(targetMethodName);
+                                beforeList.add(as);
+                            } else if (aopBeforeOrAfter.getName().equals("after")) {
+                                AspectMethod as = new AspectMethod();
+                                as.setAspectBeanName(ref.getText());
+                                as.setAspectMethodName(aspectMethod.getText());
+                                as.setTargetClass(targetClass);
+                                as.setTargetMethodName(targetMethodName);
+                            }
+                            beanDefinition.setAspectBeforeMethodList(beforeList);
+                            beanDefinition.setAspectAfterMethodList(afterList);
+                        }
+                    }
+                } catch (SecurityException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     private List<BeanDefinition> handleBeanDefinition(Document document) {

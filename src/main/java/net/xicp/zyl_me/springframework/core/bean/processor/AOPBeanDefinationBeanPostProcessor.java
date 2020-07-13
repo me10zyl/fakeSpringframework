@@ -1,101 +1,83 @@
 package net.xicp.zyl_me.springframework.core.bean.processor;
 
 
+import net.xicp.zyl_me.springframework.core.bean.AspectMethod;
+import net.xicp.zyl_me.springframework.core.bean.BeanDefinition;
+import net.xicp.zyl_me.springframework.core.bean.annotation.Autowired;
 import net.xicp.zyl_me.springframework.core.bean.factory.FactoryBean;
 import net.xicp.zyl_me.springframework.core.context.ApplicationContext;
-import net.xicp.zyl_me.springframework.core.context.Environment;
 import net.xicp.zyl_me.springframework.interceptor.DefaultInvocationHandler;
-import org.dom4j.Attribute;
-import org.dom4j.Document;
-import org.dom4j.Element;;
+;
 
 
-import javax.xml.soap.Node;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 
 public class AOPBeanDefinationBeanPostProcessor implements BeanPostProcessor {
 
-    @Override
-    public Object postProcessBeforeInitialization(String beanName, Object instance) {
-        return instance;
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    private DefaultInvocationHandler wrapObject(Object aspectObj, String targetClassName, Class<?> targetClass, String aspectMethod, String targetMethodName, String beforeOrAfter) {
+        DefaultInvocationHandler proxyHandler = null;
+        try {
+            String tmpBeanName = "proxyHandler$" + targetClassName;
+            proxyHandler = (DefaultInvocationHandler) applicationContext.getBean(tmpBeanName);
+            if (proxyHandler == null) {
+                proxyHandler = new DefaultInvocationHandler(targetClass.newInstance());
+                FactoryBean factoryBean = new FactoryBean(proxyHandler, applicationContext);
+                applicationContext.getEnvironment().getContainer().put(tmpBeanName, factoryBean);
+            }
+            proxyHandler.setAspect(aspectObj.getClass());
+            if (beforeOrAfter.equals("before")) {
+                proxyHandler.addBeforeMethod(aspectObj.getClass().getMethod(aspectMethod, null));
+            } else if(beforeOrAfter.equals("after")){
+                proxyHandler.addAfterMethod(aspectObj.getClass().getMethod(aspectMethod, null));
+            }
+            proxyHandler.addTargetMethodName(targetMethodName);
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return proxyHandler;
     }
 
-    private void handleAOPDefination(Document document, ApplicationContext applicationContext, Environment environment) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        @SuppressWarnings("unchecked")
-        List<Node> aspect = document.selectNodes("/*[name()='beans']//*[name()='aop:config']/*");
-        Iterator<Node> iteratorAspect = aspect.iterator();
-        while (iteratorAspect.hasNext()) {
-            Element aspect_ = (Element) iteratorAspect.next();
-            Attribute ref = ((Element) aspect_).attribute("ref");
-            String beanName = ref.getText();
-            @SuppressWarnings("unchecked")
-            List<Node> aopAdvice = new ArrayList<Node>();
-            List<Node> aopBefore = aspect_.selectNodes("/beans//aop:config/aop:aspect/aop:before");
-            List<Node> aopAfter = aspect_.selectNodes("/beans//aop:config/aop:aspect/aop:after");
-            aopAdvice.addAll(aopBefore);
-            aopAdvice.addAll(aopAfter);
-            for (Node node : aopAdvice) {
-                Element aopBeforeOrAfter = (Element) node;
-                Attribute pointcut_ = aopBeforeOrAfter.attribute("pointcut");
-                Attribute aspectMethod = aopBeforeOrAfter.attribute("method");
-                try {
-                    String targetAOP = pointcut_.getText();
-                    Pattern pClassName = Pattern.compile("(\\w+\\.)+\\w+(?=\\.)");
-                    Matcher matcher = pClassName.matcher(targetAOP);
-                    if (matcher.find()) {
-                        String targetClassName = matcher.group();
-                        Class<?> targetClass = Class.forName(targetClassName);
-                        Pattern pMethod = Pattern.compile("(\\w+\\.)+(\\w+)");
-                        Matcher mathcer2 = pMethod.matcher(targetAOP);
-                        if (mathcer2.find()) {
-                            String targetMethodName = mathcer2.group(2);
-                            Object aspectObj = applicationContext.getBean(ref.getText());
-                            String tmpBeanName = "proxyHandler$" + targetClassName;
-                            DefaultInvocationHandler proxyHandler = (DefaultInvocationHandler) applicationContext.getBean(tmpBeanName);
-                            if (proxyHandler == null) {
-                                proxyHandler = new DefaultInvocationHandler(targetClass.newInstance());
-                                FactoryBean factoryBean = new FactoryBean(proxyHandler, applicationContext);
-                                environment.getContainer().put(tmpBeanName, factoryBean);
-                            }
-                            proxyHandler.setAspect(aspectObj.getClass());
-                            if (aopBeforeOrAfter.getName().equals("before")) {
-                                proxyHandler.addBeforeMethod(aspectObj.getClass().getMethod(aspectMethod.getText(), null));
-                            } else if (aopBeforeOrAfter.getName().equals("after")) {
-                                proxyHandler.addAfterMethod(aspectObj.getClass().getMethod(aspectMethod.getText(), null));
-                            }
-                            proxyHandler.addTargetMethodName(targetMethodName);
-                            Class<?>[] interfaces = targetClass.getInterfaces();
-                            if (interfaces.length == 0) {
-                                interfaces = new Class[]{targetClass};
-                            }
-                            Object newProxyInstance = Proxy.newProxyInstance(targetClass.getClassLoader(), interfaces, proxyHandler);
-                            Set<String> keySet = environment.getContainer().keySet();
-                            Iterator<String> keySetIterator = keySet.iterator();
-                            while (keySetIterator.hasNext()) {
-                                String key = keySetIterator.next();
-                                Object containerObject = applicationContext.getBean(key);
-                                if (targetClass.isInstance(containerObject)) {
-                                    FactoryBean factoryBean = new FactoryBean(newProxyInstance, applicationContext);
-                                    environment.getContainer().put(key, factoryBean);
-                                }
-                            }
-                        }
-                    }
-                } catch (SecurityException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (NoSuchMethodException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
+    @Override
+    public Object postProcessBeforeInitialization(String beanName, Object instance) {
+        List<BeanDefinition> beanDefinitionList = (List<BeanDefinition>) applicationContext.getBean("beanDefinitionList");
+        Optional<BeanDefinition> first = beanDefinitionList.stream().filter(e -> e.getBeanName().equals(beanName)).findFirst();
+        if(!first.isPresent()){
+            return instance;
         }
+        BeanDefinition beanDefinition =  first.get();
+        List<AspectMethod> aspectBeforeMethodList = beanDefinition.getAspectBeforeMethodList();
+        List<AspectMethod> aspectAfterMethodList = beanDefinition.getAspectBeforeMethodList();
+        if(aspectAfterMethodList == null){
+            aspectAfterMethodList = new ArrayList<>();
+        }
+        if(aspectBeforeMethodList == null){
+            aspectBeforeMethodList = new ArrayList<>();
+        }
+        if(aspectAfterMethodList.size() == 0 && aspectBeforeMethodList.size() == 0){
+            return instance;
+        }
+        DefaultInvocationHandler defaultInvocationHandler = null;
+        for (AspectMethod aspectMethod : aspectBeforeMethodList) {
+            FactoryBean bean = (FactoryBean) applicationContext.getBean(aspectMethod.getAspectBeanName());
+            Class<?> aspectClass = bean.getClazz();
+            wrapObject(bean.getInstance(), aspectClass.getName(), aspectMethod.getTargetClass(), aspectMethod.getTargetMethodName(),aspectMethod.getTargetMethodName(),  "before");
+        }
+        for (AspectMethod aspectMethod : aspectBeforeMethodList) {
+            FactoryBean bean = (FactoryBean) applicationContext.getBean(aspectMethod.getAspectBeanName());
+            Class<?> aspectClass = bean.getClazz();
+            defaultInvocationHandler = wrapObject(bean.getInstance(), aspectClass.getName(), aspectMethod.getTargetClass(), aspectMethod.getTargetMethodName(), aspectMethod.getTargetMethodName(), "after");
+        }
+        Class<?> targetClass = instance.getClass();
+        Class<?>[] interfaces = targetClass.getInterfaces();
+        if (interfaces.length == 0) {
+            interfaces = new Class[]{targetClass};
+        }
+        Object newProxyInstance = Proxy.newProxyInstance(targetClass.getClassLoader(), interfaces, defaultInvocationHandler);
+        return newProxyInstance;
     }
 
     @Override
