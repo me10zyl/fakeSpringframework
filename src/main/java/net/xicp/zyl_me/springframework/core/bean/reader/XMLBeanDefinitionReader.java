@@ -51,6 +51,16 @@ public class XMLBeanDefinitionReader implements BeanDefinitionReader {
             environment.setXmlDocument(document);
             list = handleBeanDefinition(document);
             handleAOPDefination(document, list);
+            list.sort(new Comparator<BeanDefinition>() {
+                @Override
+                public int compare(BeanDefinition o1, BeanDefinition o2) {
+                    int l1 = o1.getAspectAfterMethodList() == null ? 0 : o1.getAspectAfterMethodList().size();
+                    int l2 = o1.getAspectBeforeMethodList() == null ? 0 : o1.getAspectBeforeMethodList().size();
+                    int l3 = o2.getAspectBeforeMethodList() == null ? 0 : o2.getAspectBeforeMethodList().size();
+                    int l4 = o2.getAspectAfterMethodList() == null ? 0 : o2.getAspectAfterMethodList().size();
+                    return (l1 + l2) - (l3 + l4);
+                }
+            });
         } catch (IOException | DocumentException | IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             // TODO: handle exception
             e.printStackTrace();
@@ -87,7 +97,13 @@ public class XMLBeanDefinitionReader implements BeanDefinitionReader {
                             Optional<BeanDefinition> beanDefinitionOptional = list.stream().filter(e -> e.getClazz().equals(targetClassName)).findFirst();
                             BeanDefinition beanDefinition = beanDefinitionOptional.get();
                             List<AspectMethod> beforeList = new ArrayList<>();
+                            if(beanDefinition.getAspectBeforeMethodList() != null){
+                                beforeList = beanDefinition.getAspectBeforeMethodList();
+                            }
                             List<AspectMethod> afterList = new ArrayList<>();
+                            if(beanDefinition.getAspectAfterMethodList() != null){
+                                afterList = beanDefinition.getAspectAfterMethodList();
+                            }
                             String targetMethodName = mathcer2.group(2);
                             Class<?> targetClass = Class.forName(targetClassName);
                             if (aopBeforeOrAfter.getName().equals("before")) {
@@ -103,6 +119,7 @@ public class XMLBeanDefinitionReader implements BeanDefinitionReader {
                                 as.setAspectMethodName(aspectMethod.getText());
                                 as.setTargetClass(targetClass);
                                 as.setTargetMethodName(targetMethodName);
+                                afterList.add(as);
                             }
                             beanDefinition.setAspectBeforeMethodList(beforeList);
                             beanDefinition.setAspectAfterMethodList(afterList);

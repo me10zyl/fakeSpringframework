@@ -50,7 +50,7 @@ public class AOPBeanDefinationBeanPostProcessor implements BeanPostProcessor {
         }
         BeanDefinition beanDefinition =  first.get();
         List<AspectMethod> aspectBeforeMethodList = beanDefinition.getAspectBeforeMethodList();
-        List<AspectMethod> aspectAfterMethodList = beanDefinition.getAspectBeforeMethodList();
+        List<AspectMethod> aspectAfterMethodList = beanDefinition.getAspectAfterMethodList();
         if(aspectAfterMethodList == null){
             aspectAfterMethodList = new ArrayList<>();
         }
@@ -62,14 +62,14 @@ public class AOPBeanDefinationBeanPostProcessor implements BeanPostProcessor {
         }
         DefaultInvocationHandler defaultInvocationHandler = null;
         for (AspectMethod aspectMethod : aspectBeforeMethodList) {
-            FactoryBean bean = (FactoryBean) applicationContext.getBean(aspectMethod.getAspectBeanName());
-            Class<?> aspectClass = bean.getClazz();
-            wrapObject(bean.getInstance(), aspectClass.getName(), aspectMethod.getTargetClass(), aspectMethod.getTargetMethodName(),aspectMethod.getTargetMethodName(),  "before");
+            Object bean =  applicationContext.getBean(aspectMethod.getAspectBeanName());
+            Class<?> aspectClass = bean.getClass();
+            wrapObject(bean, aspectClass.getName(), aspectMethod.getTargetClass(), aspectMethod.getAspectMethodName(),aspectMethod.getTargetMethodName(),  "before");
         }
-        for (AspectMethod aspectMethod : aspectBeforeMethodList) {
-            FactoryBean bean = (FactoryBean) applicationContext.getBean(aspectMethod.getAspectBeanName());
-            Class<?> aspectClass = bean.getClazz();
-            defaultInvocationHandler = wrapObject(bean.getInstance(), aspectClass.getName(), aspectMethod.getTargetClass(), aspectMethod.getTargetMethodName(), aspectMethod.getTargetMethodName(), "after");
+        for (AspectMethod aspectMethod : aspectAfterMethodList) {
+            Object bean =  applicationContext.getBean(aspectMethod.getAspectBeanName());
+            Class<?> aspectClass = bean.getClass();
+            defaultInvocationHandler = wrapObject(bean, aspectClass.getName(), aspectMethod.getTargetClass(), aspectMethod.getAspectMethodName(), aspectMethod.getTargetMethodName(), "after");
         }
         Class<?> targetClass = instance.getClass();
         Class<?>[] interfaces = targetClass.getInterfaces();

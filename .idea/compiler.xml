@@ -6,11 +6,24 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="tj-im-export" />
+        <module name="tj-im-service" />
+        <module name="tj-im-domain" />
+        <module name="tj-im-common" />
         <module name="fakespring" />
+        <module name="tj-im-dao" />
+        <module name="tj-im-web" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="fakespring" target="8" />
+      <module name="tj-im" target="1.8" />
+      <module name="tj-im-common" target="1.8" />
+      <module name="tj-im-dao" target="1.8" />
+      <module name="tj-im-domain" target="1.7" />
+      <module name="tj-im-export" target="1.7" />
+      <module name="tj-im-service" target="8" />
+      <module name="tj-im-web" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

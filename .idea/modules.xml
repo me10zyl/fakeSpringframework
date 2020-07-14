@@ -3,6 +3,13 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/fakespring.iml" filepath="$PROJECT_DIR$/fakespring.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tj-im/tj-im.iml" filepath="$PROJECT_DIR$/../tj-im/tj-im.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tj-im/tj-im-common/tj-im-common.iml" filepath="$PROJECT_DIR$/../tj-im/tj-im-common/tj-im-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tj-im/tj-im-dao/tj-im-dao.iml" filepath="$PROJECT_DIR$/../tj-im/tj-im-dao/tj-im-dao.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tj-im/tj-im-domain/tj-im-domain.iml" filepath="$PROJECT_DIR$/../tj-im/tj-im-domain/tj-im-domain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tj-im/tj-im-export/tj-im-export.iml" filepath="$PROJECT_DIR$/../tj-im/tj-im-export/tj-im-export.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tj-im/tj-im-service/tj-im-service.iml" filepath="$PROJECT_DIR$/../tj-im/tj-im-service/tj-im-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tj-im/tj-im-web/tj-im-web.iml" filepath="$PROJECT_DIR$/../tj-im/tj-im-web/tj-im-web.iml" />
     </modules>
   </component>
 </project>
